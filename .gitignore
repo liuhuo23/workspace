@@ -1,3 +1,4 @@
 .env
 data/
 www/
+config/webdav/config.yaml

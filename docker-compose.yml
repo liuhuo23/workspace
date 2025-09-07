@@ -73,7 +73,18 @@ services:
       - ${ES_DATA_PATH}:/usr/share/elasticsearch/data
     networks:
       - space
-
+  webdav:
+    image: hacdias/webdav:latest
+    container_name: webdav
+    restart: always
+    ports:
+      - "8088:8088"
+    volumes:
+      - ${WEBDAV_DATA_PATH}:/data
+      - ${WEBDAV_CONFIG_PATH}:/config
+    command: ["--config", "/config/config.yaml"]
+    networks:
+      - space
 
 networks:
   space:
