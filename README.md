@@ -75,4 +75,13 @@ docker-compose up -d
 
 ---
 
-如有问题欢迎反馈！
+# 问题
+## 1. elasticsearch 没有权限写入文件
+```shell
+# 以下命令进入容器内
+docker compose run -it elasticsearch /bin/bash
+id elasticsearch
+
+# 退出
+sudo chown -R 1000:1000 ./data/elasticsearch
+```
