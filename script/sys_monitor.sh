@@ -1,6 +1,7 @@
 #!/bin/bash
 # 监控每个CPU核心的使用率、内存、温度、风扇转速
 LOGFILE="/home/liuhuo/workspace/data/logs/sys_monitor.log"
+SVAEFILE="/home/liuhuo/workspace/data/logs/sys_monitor_save.log"
 date >  "$LOGFILE"
 
 # 1. 每个CPU核心使用率
@@ -91,6 +92,55 @@ echo "=============================================" >> "$LOGFILE"
 # 判断是否需要重启（温度取整数部分比较）
 cpu_temp_int=${cpu_temp%.*}
 if [ "$cpu_usage_int" -ge "$CPU_THRESHOLD" ] || [ "$mem_usage" -ge "$MEM_THRESHOLD" ] || [ "$cpu_temp_int" -ge "$TEMP_THRESHOLD" ]; then
-    echo "$(date): 系统异常，自动重启！CPU:${cpu_usage_int}% MEM:${mem_usage}% TEMP:$cpu_temp°C" >> "$LOGFILE"
+    echo "$(date): 系统异常，自动重启！CPU:${cpu_usage_int}% MEM:${mem_usage}% TEMP:$cpu_temp°C" >> "$SAVEFILE"
+    
+    # 保存现场信息
+    echo "================= 保存现场信息 =================" >> "$SAVEFILE"
+    
+    # 保存进程快照
+    echo "------- 进程快照 (ps aux) -------" >> "$SAVEFILE"
+    ps aux >> "$SAVEFILE" 2>&1
+    
+    # 保存网络状态
+    echo "------- 网络连接状态 (netstat -an) -------" >> "$SAVEFILE"
+    if command -v netstat &>/dev/null; then
+        netstat -an >> "$SAVEFILE" 2>&1
+    else
+        echo "netstat命令未安装" >> "$LOGFILE"
+    fi
+    
+    echo "------- 网络接口信息 (ip addr) -------" >> "$SAVEFILE"
+    if command -v ip &>/dev/null; then
+        ip addr >> "$SAVEFILE" 2>&1
+    elif command -v ifconfig &>/dev/null; then
+        ifconfig >> "$SAVEFILE" 2>&1
+    else
+        echo "ip和ifconfig命令均未安装" >> "$SAVEFILE"
+    fi
+    
+    # 保存系统负载信息
+    echo "------- 系统负载 (uptime) -------" >> "$SAVEFILE"
+    uptime >> "$LOGFILE" 2>&1
+    
+    echo "------- 当前登录用户 (w) -------" >> "$SAVEFILE"
+    w >> "$LOGFILE" 2>&1
+    
+    # 保存磁盘使用情况
+    echo "------- 磁盘使用情况 (df -h) -------" >> "$SAVEFILE"
+    df -h >> "$LOGFILE" 2>&1
+    
+    # 保存系统日志片段
+    echo "------- 系统日志片段 -------" >> "$SAVEFILE"
+    if command -v journalctl &>/dev/null; then
+        journalctl -n 100 >> "$SAVEFILE" 2>&1
+    elif [ -f /var/log/syslog ]; then
+        tail -n 100 /var/log/syslog >> "$SAVEFILE" 2>&1
+    else
+        echo "无法找到系统日志文件" >> "$SAVEFILE"
+    fi
+    
+    echo "=============================================" >> "$SAVEFILE"
+    
+    # 执行重启
     /sbin/reboot
 fi
