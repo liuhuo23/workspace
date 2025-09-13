@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<yandex>
+    <users>
+        <default>
+            <profile>default</profile>
+            <quota>default</quota>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <settings>
+                <!-- 查询默认使用 FINAL -->
+                <force_final>1</force_final>
+            </settings>
+        </default>
+    </users>
+    <profiles>
+        <default/>
+    </profiles>
+    <quotas>
+        <default/>
+    </quotas>
+</yandex>

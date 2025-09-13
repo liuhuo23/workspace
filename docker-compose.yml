@@ -1,15 +1,35 @@
 services:
   nginx:
-    image: nginx:alpine
+    # image: nginx:alpine
+    image: nginx-custom:v0.1
     ports:
       - "80:80"
       - "443:443"
     networks:
       - space
     volumes:
-      - ${NGINX_CONF_PATH}:/etc/nginx:ro
-      - ${NGINX_DATA_PATH}:/usr/share/nginx:ro
-
+      - ${NGINX_CONF_PATH}:/usr/local/openresty/nginx/conf:ro
+      - ${NGINX_DATA_PATH}:/usr/share/nginx:rw
+      - ${NGINX_LOG_PATH}:/var/log/nginx:rw
+  moontv-core:
+    image: ghcr.io/senshinya/moontv:sha-a5a4e9f
+    container_name: moontv
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      - USERNAME=${MOONTV_USERNAME}
+      - PASSWORD=${MOONTV_PASSWORD}
+      - NEXT_PUBLIC_STORAGE_TYPE=redis
+      - REDIS_URL=redis://redis:6379
+      - NEXT_PUBLIC_ENABLE_REGISTER=true
+    networks:
+      - space
+    depends_on:
+      - redis
+      # 如需自定义配置，可挂载文件
+      # volumes:
+      # - ${MOONTV_CONFIG_PATH}:/app:rw
   mysql:
     image: mysql:8.0
     environment:
@@ -30,7 +50,7 @@ services:
     volumes:
       - ${REDIS_CONF_PATH}:/usr/local/etc/redis/:ro
       - ${REDIS_DATA_PATH}:/data
-    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       - space
 
@@ -83,7 +103,25 @@ services:
     volumes:
       - ${WEBDAV_DATA_PATH}:/data
       - ${WEBDAV_CONFIG_PATH}:/config
-    command: ["--config", "/config/config.yaml"]
+    command: [ "--config", "/config/config.yaml" ]
+    networks:
+      - space
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    ports:
+      - "8123:8123" # HTTP接口
+      - "9000:9000" # Native接口
+      - "9009:9009" # TCP接口
+    environment:
+      - CLICKHOUSE_DB=default
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1 # 启用 RBAC（用户/角色管理）
+    volumes:
+      - ${CLICKHOUSE_DATA_PATH}:/var/lib/clickhouse
+      - ./logs/clickhouse_logs:/var/log/clickhouse-server:rw
     networks:
       - space
 

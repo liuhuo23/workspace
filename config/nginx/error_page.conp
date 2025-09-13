@@ -1,0 +1,6 @@
+# 错误页面配置 - 这个文件应该被包含在 server 块中
+# 移除 location 指令，这些应该在各自的 server 块中定义
+
+error_page 400 401 403 404 /40x.html;
+error_page 405 /40x.html;
+error_page 500 502 503 504 505 /50x.html;
